@@ -55,23 +55,23 @@ document.getElementById("scan").onclick = async function () {
             
             const result = await response.json();
             
-            if (result.s === 'ok' && result.data && result.data.d) {
+            if (result.s === 'ok' && result.data) {
                 document.getElementById("status").innerHTML = "Status : Scan Complete!";
                 
                 const table = document.getElementById("stocks-table");
                 const tbody = document.getElementById("table-body");
                 tbody.innerHTML = "";
                 
-                result.data.d.forEach(item => {
-                    const stockName = item.symbol || (item.v && item.v.short_name) || 'Stock';
-                    const ltp = item.v ? item.v.lp : 'N/A';
-                    const chp = item.v ? item.v.chp : 0;
-                    const color = chp >= 0 ? '#4ade80' : '#ef4444';
+                result.data.forEach(item => {
+                    const color = item.chp >= 0 ? '#4ade80' : '#ef4444';
+                    const candleColor = item.candle1Percent.includes("Yes") ? '#4ade80' : '#ffffff';
                     
                     const row = `<tr style="text-align:center;">
-                        <td>${stockName}</td>
-                        <td>${ltp}</td>
-                        <td style="color: ${color};">${chp}%</td>
+                        <td>${item.symbol}</td>
+                        <td>${item.lp}</td>
+                        <td style="color: ${color};">${item.chp}%</td>
+                        <td style="color: ${candleColor};">${item.candle1Percent}</td>
+                        <td>${item.turnoverCr}</td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -80,7 +80,7 @@ document.getElementById("scan").onclick = async function () {
             } else {
                 document.getElementById("status").innerHTML = "Status : Scan Failed or No Data.";
             }
-        } catch (error) {
+        }catch (error) {
             document.getElementById("status").innerHTML = "Status : Scanning Error.";
             console.error(error);
         }
