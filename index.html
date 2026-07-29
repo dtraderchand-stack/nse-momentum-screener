@@ -1,89 +1,29 @@
-const APP_ID = "1PMA5T4004-200";
-const REDIRECT_URI = "https://nse-momentum-screener.vercel.app/";
+<!DOCTYPE html>
+<html lang="en">
 
-async function startScan() {
-    const token = localStorage.getItem("fyers_token");
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    if (!token) {
-        document.getElementById("result").innerHTML =
-            "<h3>Redirecting to Fyers Login...</h3>";
+    <title>NSE Momentum Scanner</title>
 
-        const authUrl =
-            `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=123`;
+    <link rel="stylesheet" href="style.css">
+</head>
 
-        setTimeout(() => {
-            window.location.href = authUrl;
-        }, 800);
+<body>
 
-        return;
-    }
+    <h1>NSE Momentum Scanner</h1>
 
-    document.getElementById("result").innerHTML = "<h3>Scanning...</h3>";
+    <button id="scanBtn">
+        Start Scan
+    </button>
 
-    try {
+    <div id="result">
+        Waiting for scanner...
+    </div>
 
-        const res = await fetch("/api/scan", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": token
-            }
-        });
+    <script src="script.js"></script>
 
-        const json = await res.json();
+</body>
 
-        if (json.error) {
-
-            localStorage.removeItem("fyers_token");
-
-            document.getElementById("result").innerHTML =
-                "<h3>Session Expired. Logging in again...</h3>";
-
-            setTimeout(startScan,1000);
-
-            return;
-        }
-
-        showTable(json.data);
-
-    } catch(e){
-
-        document.getElementById("result").innerHTML =
-            "<h3>Scanner Error</h3>";
-
-        console.log(e);
-    }
-}
-
-window.onload = async ()=>{
-
-    const params=new URLSearchParams(window.location.search);
-
-    const code=params.get("code");
-
-    if(code){
-
-        document.getElementById("result").innerHTML=
-        "<h3>Generating Access Token...</h3>";
-
-        const res=await fetch(`/api/token?code=${code}`);
-
-        const data=await res.json();
-
-        if(data.access_token){
-
-            localStorage.setItem("fyers_token",data.access_token);
-
-            history.replaceState({},document.title,REDIRECT_URI);
-
-        }
-
-    }
-
-    startScan();
-
-}
-
-document.getElementById("scanBtn").onclick=()=>{
-    startScan();
-}
+</html>
