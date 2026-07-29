@@ -47,7 +47,6 @@ document.getElementById("scan").onclick = async function () {
         document.getElementById("status").innerHTML = "Status : Scanning momentum stocks...";
         
         try {
-            // Yahan hum momentum screening ka backend route call karenge
             const response = await fetch('/api/scan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -56,12 +55,25 @@ document.getElementById("scan").onclick = async function () {
             
             const result = await response.json();
             
-            if (result.s === 'ok') {
-                document.getElementById("status").innerHTML = "Status : Scan Complete! Check results below.";
-                console.log("Scanned Stocks:", result.data);
-                alert("Scan successful! Top momentum stocks console me print ho gaye hain.");
+            if (result.s === 'ok' && result.data && result.data.d) {
+                document.getElementById("status").innerHTML = "Status : Scan Complete!";
+                
+                const table = document.getElementById("stocks-table");
+                const tbody = document.getElementById("table-body");
+                tbody.innerHTML = "";
+                
+                result.data.d.forEach(item => {
+                    const row = `tr style="text-align:center;">
+                        <td>${item.symbol}</td>
+                        <td>${item.v ? item.v.lp : 'N/A'}</td>
+                        <td style="color: ${(item.v && item.v.ch >= 0) ? '#4ade80' : '#ef4444'};">${item.v ? item.v.chp + '%' : 'N/A'}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+                
+                table.style.display = "table";
             } else {
-                document.getElementById("status").innerHTML = "Status : Scan Failed - " + (result.message || "Unknown error");
+                document.getElementById("status").innerHTML = "Status : Scan Failed or No Data.";
             }
         } catch (error) {
             document.getElementById("status").innerHTML = "Status : Scanning Error.";
