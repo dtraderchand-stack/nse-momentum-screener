@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fyers Momentum Screener</title>
+  <title>Fyers Top 40 Gainers</title>
   <style>
-    body{background:#0a1128;color:#fff;font-family:Arial;text-align:center;padding:40px 20px}
+    body{background:#0a1128;color:#fff;font-family:Arial;text-align:center;padding:80px 20px}
     h1{color:#58a6ff}
-    .input-box{margin:20px auto;max-width:500px}
-    input{width:90%;padding:10px;margin:8px 0;border-radius:5px;border:1px solid #333;background:#161b22;color:#fff}
-    button{background:#007bff;color:#fff;border:none;padding:15px 30px;font-size:18px;border-radius:8px;cursor:pointer;margin-top:10px}
+    button{background:#007bff;color:#fff;border:none;padding:15px 30px;font-size:18px;border-radius:8px;cursor:pointer}
     button:hover{background:#0056b3}
     #status{margin-top:20px;color:#aaa}
     table{margin:20px auto;border-collapse:collapse;width:90%;max-width:800px}
@@ -19,59 +17,60 @@
 </head>
 <body>
   <h1>Fyers Top 40 Gainers</h1>
-  
-  <div class="input-box">
-    <p>App ID aur Access Token daalo 1 baar</p>
-    <input type="text" id="appId" placeholder="App ID: jaise ABCD12-100">
-    <input type="text" id="accessToken" placeholder="Access Token paste karo">
-  </div>
-
   <button onclick="startScan()">Start Scan</button>
   <p id="status">Status: Idle</p>
   <div id="result"></div>
 
 <script>
-async function startScan() {
-  const appId = document.getElementById('appId').value.trim();
-  const token = document.getElementById('accessToken').value.trim();
-  
-  if(!appId || !token) {
-    alert("App ID aur Token dono dalo");
-    return;
-  }
+const APP_ID = "TUMHARA_APP_ID-100"; // yahan dal do
+const APP_SECRET = "TUMHARA_APP_SECRET"; // yahan dal do
 
+async function getToken() {
+  const redirectUrl = window.location.origin;
+  const loginUrl = `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${APP_ID}&redirect_uri=${redirectUrl}&response_type=code&state=123`;
+  
+  window.open(loginUrl, '_blank');
+  const authCode = prompt("1. Naya tab me login karo\n2. URL me se 'code=' ke baad wala copy karke yahan paste karo");
+  
+  const res = await fetch('/api/fyers-auth', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({appId: APP_ID, secret: APP_SECRET, authCode})
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  
+  localStorage.setItem("fyers_token", data.access_token);
+  return data.access_token;
+}
+
+async function startScan() {
   document.getElementById('status').innerText = 'Status: Scanning...';
   document.getElementById('result').innerHTML = '';
   
   try {
+    let token = localStorage.getItem("fyers_token");
+    if(!token) token = await getToken();
+
     const res = await fetch('/api/scan', { 
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `${appId}:${token}`  // Fyers wala format
-      }
+      headers: {'Authorization': `${APP_ID}:${token}`}
     });
-    
     const data = await res.json();
-    
     if(data.error) throw new Error(data.error);
     
     document.getElementById('status').innerText = `Status: Found ${data.total} stocks`;
     
     let table = '<table><tr><th>Rank</th><th>Symbol</th><th>LTP</th><th>% Change</th></tr>';
     data.data.forEach((stock, i) => {
-      table += `<tr>
-        <td>${i+1}</td>
-        <td><b>${stock.symbol}</b></td>
-        <td>${stock.ltp}</td>
-        <td class="green">+${stock.change}%</td>
-      </tr>`;
+      table += `<tr><td>${i+1}</td><td><b>${stock.symbol}</b></td><td>${stock.ltp}</td><td class="green">+${stock.change}%</td></tr>`;
     });
     table += '</table>';
     document.getElementById('result').innerHTML = table;
 
   } catch(e) {
-    document.getElementById('status').innerText = 'Status: Scan Failed - ' + e.message;
+    document.getElementById('status').innerText = 'Status: Failed - ' + e.message;
+    localStorage.removeItem("fyers_token"); // token kharab hai to delete
   }
 }
 </script>
