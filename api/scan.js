@@ -26,7 +26,8 @@ export default async function handler(req, res) {
         
         if (quotesData.s === 'ok' && quotesData.d) {
             for (let item of quotesData.d) {
-                const sym = item.name || item.symbol || "Stock";
+                // Fyers v3 quotes mein symbol name 'n' ya 'symbol' mein hota hai
+                const sym = item.n || item.symbol || "NSE Stock";
                 let candle1Percent = "No (0.00%)";
                 let turnoverCr = "0.00 Cr";
 
@@ -50,10 +51,10 @@ export default async function handler(req, res) {
                         const isMore1 = Math.abs(pctChange) >= 1.0 ? "Yes" : "No";
                         candle1Percent = `${isMore1} (${pctChange.toFixed(2)}%)`;
 
-                        const ltp = item.v ? item.v.lp : close;
-                        // Fyers intraday volume ya total volume handle karne ke liye
-                        const totalVol = item.v && item.v.volume ? item.v.volume : volume;
-                        const turnover = ltp * totalVol;
+                        const ltp = item.v && item.v.lp ? item.v.lp : close;
+                        // Fyers v3 quote mein volume 'traded_volume' ya 'volume' mein hota hai
+                        const vol = (item.v && (item.v.volume || item.v.traded_volume)) ? (item.v.volume || item.v.traded_volume) : volume;
+                        const turnover = ltp * vol;
                         const turnoverInCr = turnover / 10000000;
                         turnoverCr = `${turnoverInCr.toFixed(2)} Cr`;
                     }
@@ -63,8 +64,8 @@ export default async function handler(req, res) {
 
                 enhancedData.push({
                     symbol: sym,
-                    lp: item.v ? item.v.lp : 'N/A',
-                    chp: item.v ? item.v.chp : '0',
+                    lp: item.v && item.v.lp ? item.v.lp : 'N/A',
+                    chp: item.v && item.v.chp ? item.v.chp : '0',
                     candle1Percent: candle1Percent,
                     turnoverCr: turnoverCr
                 });
