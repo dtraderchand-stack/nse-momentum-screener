@@ -11,7 +11,7 @@ window.onload = async function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ auth_code: authCode, app_id: CONFIG.appId })
             });
-             
+            
             const data = await response.json();
             
             if (data.s === 'ok' && data.access_token) {
@@ -33,7 +33,7 @@ window.onload = async function() {
     }
 };
 
-document.getElementById("scan").onclick = function () {
+document.getElementById("scan").onclick = async function () {
     const existingToken = sessionStorage.getItem('fyers_access_token');
     
     if (!existingToken) {
@@ -45,6 +45,27 @@ document.getElementById("scan").onclick = function () {
         }, 1000);
     } else {
         document.getElementById("status").innerHTML = "Status : Scanning momentum stocks...";
-        alert("Token is ready! Ab hum isme stock scanning code add karenge.");
+        
+        try {
+            // Yahan hum momentum screening ka backend route call karenge
+            const response = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ access_token: existingToken })
+            });
+            
+            const result = await response.json();
+            
+            if (result.s === 'ok') {
+                document.getElementById("status").innerHTML = "Status : Scan Complete! Check results below.";
+                console.log("Scanned Stocks:", result.data);
+                alert("Scan successful! Top momentum stocks console me print ho gaye hain.");
+            } else {
+                document.getElementById("status").innerHTML = "Status : Scan Failed - " + (result.message || "Unknown error");
+            }
+        } catch (error) {
+            document.getElementById("status").innerHTML = "Status : Scanning Error.";
+            console.error(error);
+        }
     }
 };
