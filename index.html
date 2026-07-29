@@ -1,13 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NSE Momentum Screener</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>NSE Momentum Screener</h1>
-    <button id="scan">Start Scan</button>
-    <h2 id="status">Status : Waiting...</h2>
+    <div class="container">
+        <h1>NSE Momentum Screener</h1>
+        <button id="scan">Start Scan</button>
+        <p id="status">Status : Waiting...</p>
+        
+        <!-- Stocks Display Table -->
+        <div id="results-container" style="margin-top: 20px;">
+            <table id="stocks-table" border="1" style="width:100%; color:white; border-collapse: collapse; display:none;">
+                <thead>
+                    <tr style="background: #1e293b;">
+                        <th>Symbol</th>
+                        <th>LTP (Price)</th>
+                        <th>Change (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Dynamic Rows -->
+                </tbody>
+            </table>
+        </div>
+    </div>
     
     <script src="config.js"></script>
     <script src="script.js"></script>
