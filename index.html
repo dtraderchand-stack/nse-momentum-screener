@@ -1,68 +1,89 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>NSE Momentum Screener</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: Arial; padding: 20px; background: #111; color: #eee; }
-    button { padding: 12px 24px; font-size: 16px; background: #00C853; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-    th, td { padding: 10px; border: 1px solid #333; text-align: left; }
-    th { background: #222; }
-  </style>
-</head>
-<body>
-  <h2>NSE Momentum Screener</h2>
-  <button id="scanBtn">Start Scan</button>
-  <div id="result"></div>
-
-<script>
 const APP_ID = "1PMA5T4004-200";
 const REDIRECT_URI = "https://nse-momentum-screener.vercel.app/";
 
-document.getElementById('scanBtn').onclick = async () => {
-  let token = localStorage.getItem("fyers_token");
-  
-  if(!token){
-    // Step 1: Login ke liye bhejo
-    const authUrl = `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${APP_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&state=123`;
-    window.location.href = authUrl;
-    return;
-  }
-  
-  // Step 2: Token hai to scan karo
-  document.getElementById('result').innerHTML = "Scanning...";
-  const res = await fetch('/api/scan', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({token})
-  });
-  const data = await res.json();
-  showTable(data);
-}
+async function startScan() {
+    const token = localStorage.getItem("fyers_token");
 
-// Step 3: URL me code aaya to token le lo
-window.onload = async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  if(code){
-    const res = await fetch(`/api/token?code=${code}`);
-    const data = await res.json();
-    if(data.access_token){
-      localStorage.setItem("fyers_token", data.access_token);
-      window.location.href = REDIRECT_URI; // URL saaf kar do
+    if (!token) {
+        document.getElementById("result").innerHTML =
+            "<h3>Redirecting to Fyers Login...</h3>";
+
+        const authUrl =
+            `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=123`;
+
+        setTimeout(() => {
+            window.location.href = authUrl;
+        }, 800);
+
+        return;
     }
-  }
+
+    document.getElementById("result").innerHTML = "<h3>Scanning...</h3>";
+
+    try {
+
+        const res = await fetch("/api/scan", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": token
+            }
+        });
+
+        const json = await res.json();
+
+        if (json.error) {
+
+            localStorage.removeItem("fyers_token");
+
+            document.getElementById("result").innerHTML =
+                "<h3>Session Expired. Logging in again...</h3>";
+
+            setTimeout(startScan,1000);
+
+            return;
+        }
+
+        showTable(json.data);
+
+    } catch(e){
+
+        document.getElementById("result").innerHTML =
+            "<h3>Scanner Error</h3>";
+
+        console.log(e);
+    }
 }
 
-function showTable(data){
-  let html = "<table><tr><th>Symbol</th><th>LTP</th><th>%Change</th></tr>";
-  data.forEach(s => {
-    html += `<tr><td>${s.symbol}</td><td>${s.ltp}</td><td>${s.chg}%</td></tr>`;
-  });
-  html += "</table>";
-  document.getElementById('result').innerHTML = html;
+window.onload = async ()=>{
+
+    const params=new URLSearchParams(window.location.search);
+
+    const code=params.get("code");
+
+    if(code){
+
+        document.getElementById("result").innerHTML=
+        "<h3>Generating Access Token...</h3>";
+
+        const res=await fetch(`/api/token?code=${code}`);
+
+        const data=await res.json();
+
+        if(data.access_token){
+
+            localStorage.setItem("fyers_token",data.access_token);
+
+            history.replaceState({},document.title,REDIRECT_URI);
+
+        }
+
+    }
+
+    startScan();
+
 }
-</script>
-</body>
-</html>
+
+document.getElementById("scanBtn").onclick=()=>{
+    startScan();
+}
