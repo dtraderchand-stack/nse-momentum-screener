@@ -1,88 +1,131 @@
-window.onload = async function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const authCode = urlParams.get('auth_code');
-    
-    if (authCode) {
-        document.getElementById("status").innerHTML = "Status : Generating Access Token...";
-        
-        try {
-            const response = await fetch('/api/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ auth_code: authCode, app_id: CONFIG.appId })
-            });
-            
-            const data = await response.json();
-            
-            if (data.s === 'ok' && data.access_token) {
-                sessionStorage.setItem('fyers_access_token', data.access_token);
-                document.getElementById("status").innerHTML = "Status : Success! Access Token Generated. Ready to Scan.";
-                window.history.replaceState({}, document.title, window.location.pathname);
-            } else {
-                document.getElementById("status").innerHTML = "Status : Token Failed: " + (data.message || JSON.stringify(data));
-            }
-        } catch (err) {
-            document.getElementById("status").innerHTML = "Status : Server Error.";
-            console.error(err);
-        }
-    } else {
-        const existingToken = sessionStorage.getItem('fyers_access_token');
-        if (existingToken) {
-            document.getElementById("status").innerHTML = "Status : Connected & Ready to Scan.";
-        }
+const APP_ID = "1PMA5T4004-200";
+const REDIRECT_URI = "https://nse-momentum-screener.vercel.app/";
+
+async function startScan() {
+
+    const token = localStorage.getItem("fyers_token");
+
+    if (!token) {
+
+        document.getElementById("result").innerHTML =
+            "<h3>Redirecting to Fyers Login...</h3>";
+
+        const authUrl =
+            `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=123`;
+
+        setTimeout(() => {
+            window.location.href = authUrl;
+        }, 800);
+
+        return;
     }
+
+
+    document.getElementById("result").innerHTML =
+        "<h3>Scanning...</h3>";
+
+
+    try {
+
+        const res = await fetch("/api/scan", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": token
+            }
+
+        });
+
+
+        const json = await res.json();
+
+
+        if (json.error) {
+
+            localStorage.removeItem("fyers_token");
+
+
+            document.getElementById("result").innerHTML =
+                "<h3>Session Expired. Logging in again...</h3>";
+
+
+            setTimeout(startScan, 1000);
+
+            return;
+
+        }
+
+
+        showTable(json.data);
+
+
+    } catch(e) {
+
+
+        document.getElementById("result").innerHTML =
+            "<h3>Scanner Error</h3>";
+
+
+        console.log(e);
+
+    }
+
+}
+
+
+
+window.onload = async () => {
+
+
+    const params = new URLSearchParams(window.location.search);
+
+    const code = params.get("code");
+
+
+    if (code) {
+
+
+        document.getElementById("result").innerHTML =
+            "<h3>Generating Access Token...</h3>";
+
+
+        const res = await fetch(`/api/token?code=${code}`);
+
+
+        const data = await res.json();
+
+
+        if (data.access_token) {
+
+
+            localStorage.setItem(
+                "fyers_token",
+                data.access_token
+            );
+
+
+            history.replaceState(
+                {},
+                document.title,
+                REDIRECT_URI
+            );
+
+        }
+
+    }
+
+
+    startScan();
+
+
 };
 
-document.getElementById("scan").onclick = async function () {
-    const existingToken = sessionStorage.getItem('fyers_access_token');
-    
-    if (!existingToken) {
-        document.getElementById("status").innerHTML = "Status : Redirecting to Fyers Login...";
-        const authUrl = `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${CONFIG.appId}&redirect_uri=${encodeURIComponent(CONFIG.redirectUrl)}&response_type=code&state=sample_state`;
-        
-        setTimeout(function() {
-            window.location.href = authUrl;
-        }, 1000);
-    } else {
-        document.getElementById("status").innerHTML = "Status : Scanning momentum stocks...";
-        
-        try {
-            const response = await fetch('/api/scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ access_token: existingToken })
-            });
-            
-            const result = await response.json();
-            
-            if (result.s === 'ok' && result.data) {
-                document.getElementById("status").innerHTML = "Status : Scan Complete!";
-                
-                const table = document.getElementById("stocks-table");
-                const tbody = document.getElementById("table-body");
-                tbody.innerHTML = "";
-                
-                result.data.forEach(item => {
-                    const color = item.chp >= 0 ? '#4ade80' : '#ef4444';
-                    const candleColor = item.candle1Percent.includes("Yes") ? '#4ade80' : '#ffffff';
-                    
-                    const row = `<tr style="text-align:center;">
-                        <td>${item.symbol}</td>
-                        <td>${item.lp}</td>
-                        <td style="color: ${color};">${item.chp}%</td>
-                        <td style="color: ${candleColor};">${item.candle1Percent}</td>
-                        <td>${item.turnoverCr}</td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
-                
-                table.style.display = "table";
-            } else {
-                document.getElementById("status").innerHTML = "Status : Scan Failed or No Data.";
-            }
-        }catch (error) {
-            document.getElementById("status").innerHTML = "Status : Scanning Error.";
-            console.error(error);
-        }
-    }
+
+
+document.getElementById("scanBtn").onclick = () => {
+
+    startScan();
+
 };
