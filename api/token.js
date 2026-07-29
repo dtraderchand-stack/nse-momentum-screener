@@ -1,32 +1,26 @@
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method not allowed' });
-    }
+  const { code } = req.query;
+  const APP_ID = "1PMA5T4004-200";
+  const APP_SECRET = process.env.FYERS_SECRET; // Vercel me dalna hai ye
+  const REDIRECT_URI = "https://nse-momentum-screener.vercel.app/";
 
-    const { auth_code, app_id } = req.body;
-    const secret_id = process.env.FYERS_SECRET_ID;
+  if (!code) return res.status(400).json({ error: "Code missing" });
 
-    if (!auth_code || !secret_id) {
-        return res.status(400).json({ message: 'Missing auth_code or secret_id configuration' });
-    }
-
-    try {
-        const crypto = require('crypto');
-        const hash = crypto.createHash('sha256').update(`${app_id}:${secret_id}`).digest('hex');
-
-        const response = await fetch('https://api-t1.fyers.in/api/v3/validate-authcode', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                grant_type: 'authorization_code',
-                appIdHash: hash,
-                code: auth_code,
-            }),
-        });
-
-        const data = await response.json();
-        return res.status(200).json(data);
-    } catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
+  try {
+    const response = await fetch("https://api-t1.fyers.in/api/v3/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "authorization_code",
+        appIdHash: APP_ID,
+        code: code,
+        appSecret: APP_SECRET,
+        redirect_uri: REDIRECT_URI
+      })
+    });
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 }
