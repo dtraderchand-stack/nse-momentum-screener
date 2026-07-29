@@ -1,5 +1,4 @@
-
 const CONFIG = {
-    appId: "YOUR_FYERS_APP_ID",
-    redirectUrl: "https://your-vercel-url.vercel.app"
+    appId: "1PMA5T4004-200",
+    redirectUrl: "https://nse-momentum-screener.vercel.app/"
 };
