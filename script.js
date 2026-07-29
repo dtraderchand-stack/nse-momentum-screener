@@ -11,8 +11,8 @@ window.onload = function() {
 document.getElementById("scan").onclick = function () {
     document.getElementById("status").innerHTML = "Status : Redirecting to Fyers Login...";
     
-    // Updated Fyers v3 Auth URL
-    const authUrl = `https://api.fyers.in/api/v3/generate-authcode?client_id=${CONFIG.appId}&redirect_uri=${encodeURIComponent(CONFIG.redirectUrl)}&response_type=code&state=sample_state`;
+    // Corrected Fyers OAuth Login URL
+    const authUrl = `https://api.fyers.in/vocab/v2/oauth?client_id=${CONFIG.appId}&redirect_uri=${encodeURIComponent(CONFIG.redirectUrl)}&response_type=code&state=sample_state`;
     
     setTimeout(function() {
         window.location.href = authUrl;
