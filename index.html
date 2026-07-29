@@ -1,37 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NSE Momentum Screener</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Fyers Momentum Screener</title>
+  <style>
+    body{background:#0a1128;color:#fff;font-family:Arial;text-align:center;padding:40px 20px}
+    h1{color:#58a6ff}
+    .input-box{margin:20px auto;max-width:500px}
+    input{width:90%;padding:10px;margin:8px 0;border-radius:5px;border:1px solid #333;background:#161b22;color:#fff}
+    button{background:#007bff;color:#fff;border:none;padding:15px 30px;font-size:18px;border-radius:8px;cursor:pointer;margin-top:10px}
+    button:hover{background:#0056b3}
+    #status{margin-top:20px;color:#aaa}
+    table{margin:20px auto;border-collapse:collapse;width:90%;max-width:800px}
+    th{background:#161b22;color:#58a6ff}
+    td,th{border:1px solid #333;padding:10px;text-align:center}
+    .green{color:#4ade80}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>NSE Momentum Screener</h1>
-        <button id="scan">Start Scan</button>
-        <p id="status">Status : Waiting...</p>
-        
-        <!-- Stocks Display Table -->
-        <div id="results-container" style="margin-top: 20px;">
-            <table id="stocks-table" border="1" style="width:100%; color:white; border-collapse: collapse; display:none;">
-                <thead>
-                    <tr style="background: #1e293b;">
-                        <th>Symbol</th>
-                        <th>LTP (Price)</th>
-                        <th>Change (%)</th>
-                        <th>1 Min Candle > 1%</th>
-                        <th>Turnover (>6Cr)</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                    <!-- Dynamic Rows -->
-                </tbody>
-            </table>
-        </div>
-    </div>
+  <h1>Fyers Top 40 Gainers</h1>
+  
+  <div class="input-box">
+    <p>App ID aur Access Token daalo 1 baar</p>
+    <input type="text" id="appId" placeholder="App ID: jaise ABCD12-100">
+    <input type="text" id="accessToken" placeholder="Access Token paste karo">
+  </div>
+
+  <button onclick="startScan()">Start Scan</button>
+  <p id="status">Status: Idle</p>
+  <div id="result"></div>
+
+<script>
+async function startScan() {
+  const appId = document.getElementById('appId').value.trim();
+  const token = document.getElementById('accessToken').value.trim();
+  
+  if(!appId || !token) {
+    alert("App ID aur Token dono dalo");
+    return;
+  }
+
+  document.getElementById('status').innerText = 'Status: Scanning...';
+  document.getElementById('result').innerHTML = '';
+  
+  try {
+    const res = await fetch('/api/scan', { 
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${appId}:${token}`  // Fyers wala format
+      }
+    });
     
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    const data = await res.json();
+    
+    if(data.error) throw new Error(data.error);
+    
+    document.getElementById('status').innerText = `Status: Found ${data.total} stocks`;
+    
+    let table = '<table><tr><th>Rank</th><th>Symbol</th><th>LTP</th><th>% Change</th></tr>';
+    data.data.forEach((stock, i) => {
+      table += `<tr>
+        <td>${i+1}</td>
+        <td><b>${stock.symbol}</b></td>
+        <td>${stock.ltp}</td>
+        <td class="green">+${stock.change}%</td>
+      </tr>`;
+    });
+    table += '</table>';
+    document.getElementById('result').innerHTML = table;
+
+  } catch(e) {
+    document.getElementById('status').innerText = 'Status: Scan Failed - ' + e.message;
+  }
+}
+</script>
 </body>
 </html>
