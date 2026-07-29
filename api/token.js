@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   const { code } = req.query;
   const APP_ID = "1PMA5T4004-200";
-  const APP_SECRET = process.env.FYERS_SECRET; // Vercel me dalna hai ye
+  const APP_SECRET = process.env.FYERS_SECRET_ID; // <-- yahi line change ki
   const REDIRECT_URI = "https://nse-momentum-screener.vercel.app/";
 
   if (!code) return res.status(400).json({ error: "Code missing" });
