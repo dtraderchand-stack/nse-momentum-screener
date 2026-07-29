@@ -11,7 +11,7 @@ window.onload = async function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ auth_code: authCode, app_id: CONFIG.appId })
             });
-            
+             
             const data = await response.json();
             
             if (data.s === 'ok' && data.access_token) {
