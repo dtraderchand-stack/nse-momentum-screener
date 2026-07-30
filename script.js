@@ -5,5 +5,5 @@ document.getElementById("scanBtn").onclick = () => {
     const authUrl =
         `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=123`;
 
-    window.location.href = authUrl;
+window.location.href = "/api/login";
 };
