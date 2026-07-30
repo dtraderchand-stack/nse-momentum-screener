@@ -1,1 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Generate symbols.json</title>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+<h2>Select EQUITY_L.xlsx</h2>
+
+<input type="file" id="file">
+
+<br><br>
+
+<button onclick="generate()">
+Generate symbols.json
+</button>
+
+<script>
+
+async function generate(){
+
+const file=document.getElementById("file").files[0];
+
+const data=await file.arrayBuffer();
+
+const wb=XLSX.read(data);
+
+const ws=wb.Sheets[wb.SheetNames[0]];
+
+const json=XLSX.utils.sheet_to_json(ws);
+
+const symbols=json
+.filter(x=>x.SYMBOL)
+.map(x=>x.SYMBOL);
+
+const blob=new Blob(
+[
+JSON.stringify(symbols,null,2)
+],
+{
+type:"application/json"
+}
+);
+
+const a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+
+a.download="symbols.json";
+
+a.click();
+
+}
+
+</script>
+
+</body>
+</html>
