@@ -1,57 +1,87 @@
 const APP_ID = "1PMA5T4004-200";
-const REDIRECT_URI = "https://nse-momentum-screener.vercel.app/";
 
-// Start Scan Button
-document.getElementById("scanBtn").onclick = () => {
-    window.location.href = "/api/login";
-};
+function startScan() {
 
-// Page Load
+    const token = localStorage.getItem("fyers_token");
+
+    if (!token) {
+
+        window.location.href = "/api/login";
+        return;
+
+    }
+
+    document.getElementById("result").innerHTML =
+        "<h3>Scanning...</h3>";
+
+    fetch("/api/scan", {
+
+        method: "POST",
+
+        headers: {
+
+            Authorization: token
+
+        }
+
+    })
+
+    .then(r => r.json())
+
+    .then(data => {
+
+        document.getElementById("result").innerHTML =
+        "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+
+    })
+
+    .catch(err => {
+
+        document.getElementById("result").innerHTML =
+        err.message;
+
+    });
+
+}
+
+document.getElementById("scanBtn").onclick = startScan;
+
 window.onload = async () => {
-
-    const result = document.getElementById("result");
 
     const params = new URLSearchParams(window.location.search);
 
     const authCode = params.get("auth_code");
 
-    if (!authCode) {
-        result.innerHTML = "Waiting for scanner...";
-        return;
-    }
+    if (authCode) {
 
-    result.innerHTML = "Generating Access Token...";
+        document.getElementById("result").innerHTML =
+        "Generating Access Token...";
 
-    try {
+        const res = await fetch("/api/token?code=" + authCode);
 
-        const response = await fetch(`/api/token?code=${authCode}`);
-
-        const data = await response.json();
+        const data = await res.json();
 
         if (data.access_token) {
 
-            localStorage.setItem("fyers_token", data.access_token);
-
-            result.innerHTML = `
-                <h3 style="color:green">
-                ✅ Login Successful
-                </h3>
-            `;
+            localStorage.setItem(
+                "fyers_token",
+                data.access_token
+            );
 
             history.replaceState({}, "", "/");
 
-        } else {
-
-            result.innerHTML =
-                "<pre>" +
-                JSON.stringify(data, null, 2) +
-                "</pre>";
-
         }
 
-    } catch (e) {
+    }
 
-        result.innerHTML = e.message;
+    if (localStorage.getItem("fyers_token")) {
+
+        startScan();
+
+    } else {
+
+        document.getElementById("result").innerHTML =
+        "Waiting for scanner...";
 
     }
 
